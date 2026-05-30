@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ru" class="">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="TechIntern — платформа поиска стажировок и первой работы для студентов IT. Глубокий поиск по технологиям, подготовка к собеседованиям и AI-подбор."
+    />
+    <title>TechIntern — стажировки для IT-студентов</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Инициализация темы до отрисовки — предотвращает «вспышку» неправильной темы. -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('techintern-theme');
+          var theme = stored ? JSON.parse(stored).state.theme : 'system';
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var isDark = theme === 'dark' || (theme === 'system' && prefersDark);
+          document.documentElement.classList.toggle('dark', isDark);
+        } catch (e) {
+          /* no-op */
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

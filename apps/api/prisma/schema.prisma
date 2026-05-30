@@ -1,0 +1,400 @@
+// ============================================================================
+// TechIntern — Prisma schema
+// PostgreSQL. Модель отражает продуктовые сущности из доклада:
+// студенты, компании, вакансии (точный стек), отклики со статус-трекером,
+// Skill Tree, Career Hub и данные для AI-матчинга.
+// ============================================================================
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+// Перечисления
+// ----------------------------------------------------------------------------
+
+enum Role {
+  STUDENT
+  COMPANY
+  ADMIN
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+  GITHUB
+}
+
+/// Уровень владения / грейд кандидата.
+enum SeniorityLevel {
+  INTERN
+  JUNIOR
+  MIDDLE
+}
+
+/// Направления для Skill Tree и специализаций.
+enum SkillCategory {
+  FRONTEND
+  BACKEND
+  DATA_SCIENCE
+  DEVOPS
+  MOBILE
+  FUNDAMENTALS
+}
+
+enum WorkFormat {
+  OFFICE
+  REMOTE
+  HYBRID
+}
+
+enum EmploymentType {
+  INTERNSHIP
+  PART_TIME
+  FULL_TIME
+}
+
+enum VacancyStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+}
+
+/// Статус-трекер отклика: ⏳ На рассмотрении → ✅ Приглашение → 🎯 Оффер (или ❌ Отказ).
+enum ApplicationStatus {
+  PENDING
+  INVITED
+  OFFER
+  REJECTED
+}
+
+enum CompanyPlan {
+  BASIC
+  PREMIUM
+}
+
+enum CompanySize {
+  STARTUP
+  SMALL
+  MEDIUM
+  LARGE
+  ENTERPRISE
+}
+
+/// Тип материала Career Hub.
+enum ResourceType {
+  GUIDE
+  CHECKLIST
+  CODE_REVIEW
+}
+
+// ----------------------------------------------------------------------------
+// Идентичность и аутентификация
+// ----------------------------------------------------------------------------
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  passwordHash String? // null для OAuth-аккаунтов
+  role         Role         @default(STUDENT)
+  provider     AuthProvider @default(LOCAL)
+  providerId   String? // id во внешней системе (Google/GitHub)
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  studentProfile StudentProfile?
+  companyProfile CompanyProfile?
+
+  @@unique([provider, providerId])
+  @@index([role])
+  @@map("users")
+}
+
+// ----------------------------------------------------------------------------
+// Профиль студента
+// ----------------------------------------------------------------------------
+
+model StudentProfile {
+  id             String         @id @default(cuid())
+  userId         String         @unique
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName       String
+  avatarUrl      String?
+  headline       String? // «Frontend-разработчик, ищу первую стажировку»
+  bio            String?        @db.Text
+  city           String?
+  university     String?
+  course         Int? // курс обучения 1–6
+  specialization SkillCategory? // основное направление
+  level          SeniorityLevel @default(INTERN)
+  experienceYears Float         @default(0)
+  githubUrl      String?
+  telegram       String?
+  websiteUrl     String?
+  openToWork     Boolean        @default(true)
+  isPremium      Boolean        @default(false)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  skills        StudentSkill[]
+  projects      Project[]
+  applications  Application[]
+  guideProgress GuideProgress[]
+  conversations Conversation[]
+
+  @@index([specialization])
+  @@map("student_profiles")
+}
+
+/// Проекты студента — вес в матчинге (доказательство владения технологиями).
+model Project {
+  id           String         @id @default(cuid())
+  studentId    String
+  student      StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  title        String
+  description  String         @db.Text
+  technologies String[] // ['React', 'TypeScript', 'Vite']
+  role         String?
+  url          String?
+  githubUrl    String?
+  createdAt    DateTime       @default(now())
+
+  @@index([studentId])
+  @@map("projects")
+}
+
+// ----------------------------------------------------------------------------
+// Профиль компании
+// ----------------------------------------------------------------------------
+
+model CompanyProfile {
+  id          String      @id @default(cuid())
+  userId      String      @unique
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  logoUrl     String?
+  description String?     @db.Text
+  website     String?
+  city        String?
+  industry    String?
+  size        CompanySize @default(STARTUP)
+  plan        CompanyPlan @default(BASIC)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  vacancies     Vacancy[]
+  conversations Conversation[]
+
+  @@map("company_profiles")
+}
+
+// ----------------------------------------------------------------------------
+// Навыки и Skill Tree
+// ----------------------------------------------------------------------------
+
+/// Узел дерева навыков. parentId реализует иерархию (Frontend → React → Hooks).
+model Skill {
+  id        String        @id @default(cuid())
+  name      String // «React + TypeScript»
+  slug      String        @unique
+  category  SkillCategory
+  icon      String? // имя lucide-иконки или эмодзи
+  parentId  String?
+  parent    Skill?        @relation("SkillTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Skill[]       @relation("SkillTree")
+  sortOrder Int           @default(0)
+
+  studentSkills StudentSkill[]
+  vacancySkills VacancySkill[]
+
+  @@index([category])
+  @@index([parentId])
+  @@map("skills")
+}
+
+/// Владение навыком студентом: progress 0–100 (для прогресс-баров Skill Tree).
+model StudentSkill {
+  id        String         @id @default(cuid())
+  studentId String
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  skillId   String
+  skill     Skill          @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  progress  Int            @default(0) // 0–100%
+
+  @@unique([studentId, skillId])
+  @@index([studentId])
+  @@map("student_skills")
+}
+
+// ----------------------------------------------------------------------------
+// Вакансии (только intern/junior, точный стек)
+// ----------------------------------------------------------------------------
+
+model Vacancy {
+  id              String         @id @default(cuid())
+  companyId       String
+  company         CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  title           String
+  description     String         @db.Text
+  responsibilities String[]
+  requirements    String[]
+  conditions      String[]
+  city            String?
+  workFormat      WorkFormat     @default(OFFICE)
+  employmentType  EmploymentType @default(INTERNSHIP)
+  level           SeniorityLevel @default(INTERN)
+  experienceYears Float          @default(0) // требуемый опыт в годах
+  salaryMin       Int?
+  salaryMax       Int?
+  status          VacancyStatus  @default(ACTIVE)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  skills       VacancySkill[]
+  applications Application[]
+
+  @@index([status])
+  @@index([workFormat])
+  @@index([level])
+  @@map("vacancies")
+}
+
+/// Требуемый навык в вакансии. required + weight влияют на скоринг.
+model VacancySkill {
+  id        String  @id @default(cuid())
+  vacancyId String
+  vacancy   Vacancy @relation(fields: [vacancyId], references: [id], onDelete: Cascade)
+  skillId   String
+  skill     Skill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  required  Boolean @default(true)
+  weight    Float   @default(1.0)
+
+  @@unique([vacancyId, skillId])
+  @@index([vacancyId])
+  @@map("vacancy_skills")
+}
+
+// ----------------------------------------------------------------------------
+// Отклики + статус-трекер + история
+// ----------------------------------------------------------------------------
+
+model Application {
+  id          String            @id @default(cuid())
+  studentId   String
+  student     StudentProfile    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  vacancyId   String
+  vacancy     Vacancy           @relation(fields: [vacancyId], references: [id], onDelete: Cascade)
+  status      ApplicationStatus @default(PENDING)
+  coverLetter String?           @db.Text
+  matchScore  Int               @default(0) // снимок match-score на момент отклика (0–100)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  events ApplicationEvent[]
+
+  @@unique([studentId, vacancyId]) // один отклик на вакансию
+  @@index([vacancyId])
+  @@index([status])
+  @@map("applications")
+}
+
+/// Событие изменения статуса — наполняет визуальный трекер.
+model ApplicationEvent {
+  id            String            @id @default(cuid())
+  applicationId String
+  application   Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  status        ApplicationStatus
+  note          String?
+  createdAt     DateTime          @default(now())
+
+  @@index([applicationId])
+  @@map("application_events")
+}
+
+// ----------------------------------------------------------------------------
+// Career Hub: гайды, чеклисты, разборы кода
+// ----------------------------------------------------------------------------
+
+model CareerResource {
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  type        ResourceType
+  title       String
+  summary     String       @db.Text
+  content     String       @db.Text // markdown
+  category    String // «Поведенческое интервью», «Технические задачи» ...
+  tags        String[]
+  readMinutes Int          @default(5)
+  icon        String?
+  featured    Boolean      @default(false)
+  sortOrder   Int          @default(0)
+
+  // Поля разбора кода (для type = CODE_REVIEW)
+  language             String?
+  badCode              String? @db.Text
+  goodCode             String? @db.Text
+  explanation          String? @db.Text
+  interviewerQuestions String[]
+
+  // Поля чеклиста (для type = CHECKLIST) — пункты как массив строк
+  checklistItems String[]
+
+  progress GuideProgress[]
+
+  @@index([type])
+  @@map("career_resources")
+}
+
+/// Прогресс студента по материалам Career Hub (питает Skill Tree).
+model GuideProgress {
+  id          String         @id @default(cuid())
+  studentId   String
+  student     StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  resourceId  String
+  resource    CareerResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  completed   Boolean        @default(false)
+  completedAt DateTime?
+
+  @@unique([studentId, resourceId])
+  @@index([studentId])
+  @@map("guide_progress")
+}
+
+// ----------------------------------------------------------------------------
+// Сообщения (💬 Чат) — лёгкая версия для связи рекрутёр ↔ студент
+// ----------------------------------------------------------------------------
+
+model Conversation {
+  id        String         @id @default(cuid())
+  studentId String
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  companyId String
+  company   CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  messages Message[]
+
+  @@unique([studentId, companyId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderUserId   String // id User-отправителя
+  body           String       @db.Text
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@map("messages")
+}

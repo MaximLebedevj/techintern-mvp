@@ -1,0 +1,30 @@
+{
+  "name": "techintern",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TechIntern — специализированная платформа поиска стажировок для студентов IT",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "npm@11.0.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
+    "db:generate": "npm run db:generate --workspace=@techintern/api",
+    "db:migrate": "npm run db:migrate --workspace=@techintern/api",
+    "db:seed": "npm run db:seed --workspace=@techintern/api",
+    "db:studio": "npm run db:studio --workspace=@techintern/api"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "turbo": "^2.1.3"
+  }
+}

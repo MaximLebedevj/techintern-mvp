@@ -1,0 +1,179 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===========================================================================
+   Дизайн-токены TechIntern — HSL CSS-переменные (см. CLAUDE.md §6).
+   Светлая и тёмная темы. Бренд: индиго → виолет.
+   =========================================================================== */
+@layer base {
+  :root {
+    --background: 240 25% 99%;
+    --foreground: 240 14% 9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 14% 9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 14% 9%;
+
+    --primary: 245 80% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 14% 96%;
+    --secondary-foreground: 240 14% 14%;
+
+    --muted: 240 14% 96%;
+    --muted-foreground: 240 6% 44%;
+
+    --accent: 245 60% 96%;
+    --accent-foreground: 245 70% 38%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 56% 38%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 48%;
+    --warning-foreground: 38 100% 12%;
+
+    --border: 240 12% 90%;
+    --input: 240 12% 90%;
+    --ring: 245 80% 60%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 240 16% 6%;
+    --foreground: 240 12% 96%;
+
+    --card: 240 14% 9%;
+    --card-foreground: 240 12% 96%;
+
+    --popover: 240 14% 9%;
+    --popover-foreground: 240 12% 96%;
+
+    --primary: 245 84% 67%;
+    --primary-foreground: 240 20% 8%;
+
+    --secondary: 240 10% 15%;
+    --secondary-foreground: 240 12% 92%;
+
+    --muted: 240 10% 14%;
+    --muted-foreground: 240 8% 62%;
+
+    --accent: 245 40% 20%;
+    --accent-foreground: 245 80% 86%;
+
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 52% 46%;
+    --success-foreground: 152 100% 8%;
+
+    --warning: 38 92% 56%;
+    --warning-foreground: 38 100% 10%;
+
+    --border: 240 10% 18%;
+    --input: 240 10% 20%;
+    --ring: 245 84% 67%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings:
+      'cv11' on,
+      'ss01' on;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    @apply bg-primary/20;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display tracking-tight;
+  }
+
+  /* Тонкий, ненавязчивый скроллбар. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-border;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+}
+
+/* ===========================================================================
+   Премиум-утилиты: стекло, градиентный текст, сетка, свечения.
+   =========================================================================== */
+@layer components {
+  .glass {
+    background: hsl(var(--background) / 0.72);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+  }
+
+  .glass-card {
+    background: hsl(var(--card) / 0.78);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-br from-brand-500 to-fuchsia-500 bg-clip-text text-transparent;
+  }
+
+  .bg-grid {
+    background-image: var(--grid-pattern, none);
+    background-size: 40px 40px;
+  }
+
+  /* Мягкое радиальное «свечение» под hero/CTA. */
+  .glow-spot {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(80px);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .focus-ring {
+    @apply outline-none ring-offset-2 ring-offset-background focus-visible:ring-2 focus-visible:ring-ring;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
