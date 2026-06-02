@@ -7,6 +7,7 @@ import {
 import { ApplicationStatus, Prisma, VacancyStatus } from '@prisma/client';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { MatchingService } from '../matching/matching.service';
+import { PassportService } from '../passport/passport.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationStatusDto } from './dto/update-application-status.dto';
 
@@ -23,6 +24,7 @@ export class ApplicationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly matching: MatchingService,
+    private readonly passport: PassportService,
   ) {}
 
   private readonly studentInclude = {
@@ -57,12 +59,18 @@ export class ApplicationsService {
     // Снимок match-score на момент отклика.
     const match = await this.matching.match(student.id, dto.vacancyId);
 
+    // Опционально прикрепляем снимок Skill Proof Passport.
+    const passportSnapshot = dto.attachPassport
+      ? ((await this.passport.buildSnapshot(student.id)) as Prisma.InputJsonValue)
+      : undefined;
+
     return this.prisma.application.create({
       data: {
         studentId: student.id,
         vacancyId: dto.vacancyId,
         coverLetter: dto.coverLetter,
         matchScore: match.score,
+        passportSnapshot,
         status: ApplicationStatus.PENDING,
         events: { create: { status: ApplicationStatus.PENDING, note: STATUS_NOTES.PENDING } },
       },

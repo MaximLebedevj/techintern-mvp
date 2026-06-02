@@ -137,6 +137,7 @@ export interface CandidateCard {
   topSkills: { name: string; progress: number }[];
   projectCount: number;
   match?: Pick<MatchResult, 'score' | 'matchedSkills' | 'missingSkills'>;
+  engagement?: import('./skillproof').Engagement | null;
 }
 
 // --- Companies --------------------------------------------------------------
@@ -227,6 +228,7 @@ export interface Application {
   status: ApplicationStatus;
   coverLetter: string | null;
   matchScore: number;
+  passportSnapshot?: import('./skillproof').PassportSnapshot | null;
   createdAt: string;
   updatedAt: string;
   vacancy: Vacancy;
@@ -239,8 +241,10 @@ export interface Application {
     city?: string | null;
     university?: string | null;
     level?: SeniorityLevel;
+    specialization?: SkillCategory | null;
     skills?: StudentSkill[];
     _count?: { projects: number };
+    progress?: import('./skillproof').Engagement | null;
   };
 }
 

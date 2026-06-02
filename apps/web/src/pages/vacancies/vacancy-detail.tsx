@@ -6,6 +6,7 @@ import {
   Briefcase,
   Building2,
   CheckCircle2,
+  IdCard,
   Loader2,
   MapPin,
   Send,
@@ -18,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
@@ -197,11 +199,12 @@ function BulletSection({ title, items }: { title: string; items: string[] }) {
 function ApplyDialog({ vacancyId, vacancyTitle }: { vacancyId: string; vacancyTitle: string }) {
   const [open, setOpen] = useState(false);
   const [coverLetter, setCoverLetter] = useState('');
+  const [attachPassport, setAttachPassport] = useState(true);
   const apply = useApplyToVacancy();
 
   const submit = async () => {
     try {
-      await apply.mutateAsync({ vacancyId, coverLetter: coverLetter || undefined });
+      await apply.mutateAsync({ vacancyId, coverLetter: coverLetter || undefined, attachPassport });
       toast.success('Отклик отправлен! Следите за статусом в разделе «Мои отклики».');
       setOpen(false);
     } catch (error) {
@@ -231,6 +234,13 @@ function ApplyDialog({ vacancyId, vacancyTitle }: { vacancyId: string; vacancyTi
             className="min-h-[140px]"
           />
         </div>
+        <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border bg-accent/30 p-3">
+          <span className="flex items-center gap-2 text-sm">
+            <IdCard className="size-4 text-primary" />
+            Приложить Skill Proof Passport
+          </span>
+          <Switch checked={attachPassport} onCheckedChange={setAttachPassport} />
+        </label>
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)}>
             Отмена

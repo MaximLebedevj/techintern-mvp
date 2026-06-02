@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { GraduationCap, MapPin, Sparkles } from 'lucide-react';
+import { Flame, GraduationCap, MapPin, Sparkles } from 'lucide-react';
 import type { CandidateCard as Candidate } from '@/types/api';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { MatchRing } from '@/components/match/match-ring';
+import { LeagueBadge } from '@/components/skillproof/league-badge';
 import { CATEGORY_LABELS, SENIORITY_LABELS } from '@/lib/constants';
 import { initials } from '@/lib/utils';
 
@@ -62,6 +63,17 @@ export function CandidateCard({ candidate }: { candidate: Candidate }) {
             </span>
           ))}
         </div>
+
+        {candidate.engagement && (
+          <div className="mt-3 flex items-center gap-3 border-t border-border pt-3 text-xs">
+            <LeagueBadge league={candidate.engagement.league} />
+            <span className="font-semibold text-foreground">{candidate.engagement.skillScore} SP</span>
+            <span className="inline-flex items-center gap-1 text-orange-500">
+              <Flame className="size-3.5" />
+              {candidate.engagement.currentStreak} дн.
+            </span>
+          </div>
+        )}
       </Link>
     </motion.div>
   );

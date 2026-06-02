@@ -13,6 +13,7 @@ import {
   CompanyPlan,
   CompanySize,
   EmploymentType,
+  Prisma,
   PrismaClient,
   ResourceType,
   Role,
@@ -959,10 +960,240 @@ async function seedApplications(studentId: string, vacancyIds: string[]): Promis
   });
 }
 
+// --- SkillProof: паспорт, streaks, бейджи, цели, гильдии ---------------------
+
+const BADGE_SEED: Prisma.BadgeCreateManyInput[] = [
+  { key: 'streak-7', title: 'Неделя дисциплины', description: '7 дней активности подряд', icon: 'Flame', category: 'DISCIPLINE', tier: 'bronze' },
+  { key: 'streak-30', title: 'Месяц без пропусков', description: '30 дней активности подряд', icon: 'Flame', category: 'DISCIPLINE', tier: 'silver' },
+  { key: 'streak-100', title: 'Сто дней огня', description: '100 дней активности подряд', icon: 'Flame', category: 'DISCIPLINE', tier: 'gold' },
+  { key: 'commits-100', title: 'Сотня коммитов', description: '100+ коммитов на GitHub', icon: 'GitCommitHorizontal', category: 'TECH', tier: 'bronze' },
+  { key: 'commits-500', title: 'Машина коммитов', description: '500+ коммитов на GitHub', icon: 'GitCommitHorizontal', category: 'TECH', tier: 'silver' },
+  { key: 'polyglot', title: 'Полиглот', description: '3+ языка программирования', icon: 'Languages', category: 'TECH', tier: 'silver' },
+  { key: 'codewars-50', title: 'Решатель задач', description: '50+ задач на Codewars', icon: 'Swords', category: 'TECH', tier: 'bronze' },
+  { key: 'careerhub-grad', title: 'Выпускник Career Hub', description: '5+ пройденных материалов', icon: 'GraduationCap', category: 'DISCIPLINE', tier: 'silver' },
+  { key: 'diamond-league', title: 'Алмазная лига', description: 'Достигнут Diamond', icon: 'Gem', category: 'SOCIAL', tier: 'gold' },
+  { key: 'hired', title: 'Трудоустроен', description: 'Получен оффер через TechIntern', icon: 'BriefcaseBusiness', category: 'EMPLOYMENT', tier: 'gold' },
+];
+
+/** Дата начала дня N дней назад (отрицательное N — в будущем). */
+function dayStart(daysAgo: number): Date {
+  const d = new Date();
+  d.setUTCHours(0, 0, 0, 0);
+  d.setUTCDate(d.getUTCDate() - daysAgo);
+  return d;
+}
+function atHour(daysAgo: number, hour: number): Date {
+  const d = dayStart(daysAgo);
+  d.setUTCHours(hour);
+  return d;
+}
+
+async function seedSkillProof(): Promise<void> {
+  await prisma.badge.createMany({ data: BADGE_SEED, skipDuplicates: true });
+
+  const students = await prisma.studentProfile.findMany({
+    include: { user: { select: { email: true } } },
+  });
+  const byEmail = new Map(students.map((s) => [s.user.email, s.id]));
+  const alexey = byEmail.get('student@techintern.ru');
+  if (!alexey) return;
+
+  // --- Интеграции (верифицированные аккаунты) ---
+  await prisma.integration.createMany({
+    data: [
+      {
+        studentId: alexey,
+        provider: 'GITHUB',
+        username: 'example-alexey',
+        status: 'CONNECTED',
+        lastSyncedAt: new Date(),
+        stats: {
+          username: 'example-alexey',
+          profileUrl: 'https://github.com/example-alexey',
+          repos: 14,
+          followers: 23,
+          stars: 41,
+          commits: 432,
+          pullRequests: 18,
+          issues: 12,
+          languages: ['typescript', 'javascript', 'css', 'html'],
+        },
+      },
+      {
+        studentId: alexey,
+        provider: 'CODEWARS',
+        username: 'alexey',
+        status: 'CONNECTED',
+        lastSyncedAt: new Date(),
+        stats: { username: 'alexey', honor: 612, solved: 73, rank: '5 kyu', languages: ['javascript', 'typescript', 'python'] },
+      },
+    ],
+  });
+
+  // --- 47-дневный streak: ежедневные доказательства + DailyActivity ---
+  const STREAK = 47;
+  const proofs: Prisma.ActivityProofCreateManyInput[] = [];
+  const daily: Prisma.DailyActivityCreateManyInput[] = [];
+  for (let n = 0; n < STREAK; n += 1) {
+    const commits = 1 + ((n * 7) % 5);
+    proofs.push({
+      studentId: alexey,
+      source: 'GITHUB',
+      type: 'COMMIT',
+      title: `${commits} коммит(ов) в example-alexey/portfolio`,
+      url: 'https://github.com/example-alexey',
+      occurredAt: atHour(n, 12 + (n % 6)),
+      weight: Math.min(commits, 8) * 0.4,
+      skillSlugs: ['typescript'],
+    });
+    daily.push({ studentId: alexey, date: dayStart(n), count: commits + (n % 2), sources: ['github', 'habit'] });
+  }
+  const extraProofs: Prisma.ActivityProofCreateManyInput[] = [
+    { studentId: alexey, source: 'GITHUB', type: 'PULL_REQUEST', title: 'PR в open-source ui-kit', url: 'https://github.com/example-alexey', occurredAt: atHour(3, 15), weight: 2, skillSlugs: ['react'] },
+    { studentId: alexey, source: 'GITHUB', type: 'PULL_REQUEST', title: 'PR в example-alexey/kanban', occurredAt: atHour(11, 16), weight: 2, skillSlugs: ['typescript'] },
+    { studentId: alexey, source: 'CODEWARS', type: 'PROBLEM_SOLVED', title: 'Решена задача: Sum of Digits', url: 'https://www.codewars.com', occurredAt: atHour(1, 20), weight: 1, skillSlugs: ['javascript'] },
+    { studentId: alexey, source: 'CODEWARS', type: 'PROBLEM_SOLVED', title: 'Решена задача: Valid Parentheses', occurredAt: atHour(6, 19), weight: 1, skillSlugs: ['javascript'] },
+    { studentId: alexey, source: 'CODEWARS', type: 'PROBLEM_SOLVED', title: 'Решена задача: Two Sum', occurredAt: atHour(12, 21), weight: 1, skillSlugs: ['javascript'] },
+    { studentId: alexey, source: 'CAREER_HUB', type: 'GUIDE_COMPLETED', title: 'Пройден разбор: React useEffect', occurredAt: atHour(8, 10), weight: 1.5, skillSlugs: ['react'] },
+  ];
+  await prisma.activityProof.createMany({ data: [...proofs, ...extraProofs] });
+  await prisma.dailyActivity.createMany({ data: daily, skipDuplicates: true });
+
+  // --- StudentProgress ---
+  await prisma.studentProgress.create({
+    data: {
+      studentId: alexey,
+      skillScore: 780,
+      league: 'PLATINUM',
+      currentStreak: 47,
+      longestStreak: 51,
+      lastActiveDate: dayStart(0),
+      consistency30: 1,
+      streakFreezes: 2,
+      totalProofs: proofs.length + extraProofs.length,
+      scoreBreakdown: { streak: 400, volume: 214, social: 166 },
+    },
+  });
+
+  // --- Бейджи Алексея ---
+  const earnedKeys = ['streak-7', 'streak-30', 'commits-100', 'polyglot', 'codewars-50'];
+  const earnedBadges = await prisma.badge.findMany({ where: { key: { in: earnedKeys } }, select: { id: true } });
+  await prisma.studentBadge.createMany({
+    data: earnedBadges.map((b, i) => ({ studentId: alexey, badgeId: b.id, awardedAt: dayStart(40 - i * 7) })),
+    skipDuplicates: true,
+  });
+
+  // --- SMART-цели ---
+  await prisma.goal.createMany({
+    data: [
+      { studentId: alexey, title: 'Решить 100 задач на Codewars', specific: 'Алгоритмы и структуры данных', measurable: '73 / 100 задач', metricTarget: 100, metricCurrent: 73, unit: 'задач', skillSlug: 'algorithms', dueDate: atHour(-30, 12), status: 'ACTIVE' },
+      { studentId: alexey, title: '30-дневный streak коммитов', specific: 'Коммитить каждый день месяц', measurable: '30 / 30 дней', metricTarget: 30, metricCurrent: 30, unit: 'дней', skillSlug: 'git', status: 'COMPLETED', completedAt: dayStart(2) },
+      { studentId: alexey, title: 'Пройти 5 материалов Career Hub', specific: 'Подготовка к собеседованиям', measurable: '3 / 5 материалов', metricTarget: 5, metricCurrent: 3, unit: 'материалов', dueDate: atHour(-14, 12), status: 'ACTIVE' },
+    ],
+  });
+
+  // --- Привычки + отметки ---
+  const habit1 = await prisma.habit.create({ data: { studentId: alexey, title: 'Коммит каждый день', cadence: 'DAILY', skillSlug: 'git', color: '#6366f1' } });
+  const habit2 = await prisma.habit.create({ data: { studentId: alexey, title: '1 задача на Codewars', cadence: 'DAILY', skillSlug: 'algorithms', color: '#a855f7' } });
+  const habit3 = await prisma.habit.create({ data: { studentId: alexey, title: 'Чтение Career Hub 15 минут', cadence: 'DAILY', color: '#22c55e' } });
+
+  const mkCheckins = (habitId: string, days: number[]) =>
+    days.map((n) => ({ habitId, date: dayStart(n), count: 1 }));
+  const habit1Days = Array.from({ length: 44 }, (_, i) => i).filter((n) => n % 9 !== 8);
+  await prisma.habitCheckin.createMany({
+    data: [
+      ...mkCheckins(habit1.id, habit1Days),
+      ...mkCheckins(habit2.id, [0, 1, 3, 5, 6, 9, 12, 15, 18, 22, 25, 30, 34]),
+      ...mkCheckins(habit3.id, [0, 2, 4, 7, 10, 14, 20, 28]),
+    ],
+    skipDuplicates: true,
+  });
+
+  // --- Прогресс прочих студентов (для лидерборда и сравнения с рынком) ---
+  const others: { email: string; score: number; league: Prisma.StudentProgressCreateManyInput['league']; streak: number; consistency: number }[] = [
+    { email: 'dmitry@techintern.ru', score: 610, league: 'PLATINUM', streak: 21, consistency: 0.7 },
+    { email: 'maria@techintern.ru', score: 540, league: 'GOLD', streak: 12, consistency: 0.6 },
+    { email: 'sofia@techintern.ru', score: 280, league: 'SILVER', streak: 5, consistency: 0.4 },
+  ];
+  for (const o of others) {
+    const id = byEmail.get(o.email);
+    if (!id) continue;
+    await prisma.studentProgress.create({
+      data: {
+        studentId: id,
+        skillScore: o.score,
+        league: o.league,
+        currentStreak: o.streak,
+        longestStreak: o.streak + 4,
+        lastActiveDate: dayStart(o.streak > 10 ? 0 : 2),
+        consistency30: o.consistency,
+        totalProofs: Math.round(o.score / 12),
+        scoreBreakdown: { streak: Math.round(o.score * 0.45), volume: Math.round(o.score * 0.3), social: Math.round(o.score * 0.25) },
+      },
+    });
+  }
+  const dmitryId = byEmail.get('dmitry@techintern.ru');
+  if (dmitryId) {
+    await prisma.integration.create({
+      data: { studentId: dmitryId, provider: 'GITHUB', username: 'example-dmitry', status: 'CONNECTED', lastSyncedAt: new Date(), stats: { repos: 9, followers: 11, stars: 17, commits: 256, languages: ['nodejs', 'typescript', 'sql'] } },
+    });
+  }
+  const mariaId = byEmail.get('maria@techintern.ru');
+  if (mariaId) {
+    await prisma.integration.create({
+      data: { studentId: mariaId, provider: 'CODEWARS', username: 'example-maria', status: 'CONNECTED', lastSyncedAt: new Date(), stats: { honor: 380, solved: 51, rank: '6 kyu', languages: ['python'] } },
+    });
+  }
+
+  // --- Гильдии ---
+  const frontendGuild = await prisma.guild.create({ data: { name: 'Frontend Force', slug: 'frontend-force', emblem: '⚛️', description: 'Гильдия фронтенд-разработчиков' } });
+  const backendGuild = await prisma.guild.create({ data: { name: 'Backend Builders', slug: 'backend-builders', emblem: '🛠️', description: 'Серверная инженерия' } });
+  const dataGuild = await prisma.guild.create({ data: { name: 'Data Wizards', slug: 'data-wizards', emblem: '📊', description: 'Data Science и ML' } });
+
+  const sofiaId = byEmail.get('sofia@techintern.ru');
+  const memberships: Prisma.GuildMembershipCreateManyInput[] = [
+    { guildId: frontendGuild.id, studentId: alexey, role: 'LEADER' },
+  ];
+  if (sofiaId) memberships.push({ guildId: frontendGuild.id, studentId: sofiaId });
+  if (dmitryId) memberships.push({ guildId: backendGuild.id, studentId: dmitryId, role: 'LEADER' });
+  if (mariaId) memberships.push({ guildId: dataGuild.id, studentId: mariaId, role: 'LEADER' });
+  await prisma.guildMembership.createMany({ data: memberships, skipDuplicates: true });
+
+  // --- Демо-дуэль ---
+  if (dmitryId) {
+    await prisma.challenge.create({
+      data: {
+        type: 'DUEL',
+        title: 'Дуэль: Активные дни (цель 20)',
+        metric: 'active_days',
+        target: 20,
+        challengerId: alexey,
+        opponentId: dmitryId,
+        status: 'ACTIVE',
+        startsAt: dayStart(10),
+        endsAt: dayStart(-4),
+      },
+    });
+  }
+}
+
 // --- Точка входа -------------------------------------------------------------
 
 async function main(): Promise<void> {
   console.log('🌱 Очистка базы…');
+  // SkillProof
+  await prisma.challenge.deleteMany();
+  await prisma.guildMembership.deleteMany();
+  await prisma.guild.deleteMany();
+  await prisma.habitCheckin.deleteMany();
+  await prisma.habit.deleteMany();
+  await prisma.goal.deleteMany();
+  await prisma.studentBadge.deleteMany();
+  await prisma.badge.deleteMany();
+  await prisma.dailyActivity.deleteMany();
+  await prisma.activityProof.deleteMany();
+  await prisma.integration.deleteMany();
+  await prisma.studentProgress.deleteMany();
   await prisma.message.deleteMany();
   await prisma.conversation.deleteMany();
   await prisma.applicationEvent.deleteMany();
@@ -996,6 +1227,9 @@ async function main(): Promise<void> {
 
   console.log('📨 Отклики…');
   await seedApplications(primaryStudentId, vacancyIds);
+
+  console.log('🏅 SkillProof (паспорт, streaks, бейджи, цели)…');
+  await seedSkillProof();
 
   console.log('✅ Сид завершён.');
   console.log('   Студент:  student@techintern.ru / password123');

@@ -20,6 +20,11 @@ COPY tsconfig.json tsconfig.build.json nest-cli.json ./
 COPY src ./src
 RUN npm run build
 
+# Компилируем сид в обычный JS (в проде не используем ts-node) → dist/seed.js
+RUN npx tsc prisma/seed.ts --outDir dist --rootDir prisma \
+  --module commonjs --moduleResolution node --target ES2022 \
+  --esModuleInterop --skipLibCheck --resolveJsonModule
+
 # ----------------------------------------------------------------------------
 FROM node:20-bookworm-slim AS runner
 WORKDIR /app

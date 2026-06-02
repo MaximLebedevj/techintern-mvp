@@ -220,6 +220,8 @@ export class StudentsService {
       include: {
         skills: { include: { skill: true }, orderBy: { progress: 'desc' } },
         projects: { orderBy: { createdAt: 'desc' } },
+        progress: true,
+        badges: { include: { badge: true }, orderBy: { awardedAt: 'desc' } },
       },
     });
     if (!profile) throw new NotFoundException('Кандидат не найден');
@@ -239,8 +241,11 @@ export class StudentsService {
         return true;
       });
 
-      const items = filtered.slice(dto.skip, dto.skip + dto.limit).map(({ student, match }) => ({
-        ...this.toCandidateCard(student),
+      const pageSlice = filtered.slice(dto.skip, dto.skip + dto.limit);
+      const progressMap = await this.loadProgressMap(pageSlice.map(({ student }) => student.id));
+
+      const items = pageSlice.map(({ student, match }) => ({
+        ...this.toCandidateCard(student, progressMap.get(student.id)),
         match: {
           score: match.score,
           matchedSkills: match.matchedSkills,
@@ -270,6 +275,7 @@ export class StudentsService {
         include: {
           skills: { include: { skill: true }, orderBy: { progress: 'desc' }, take: 6 },
           _count: { select: { projects: true } },
+          progress: true,
         },
         orderBy: { updatedAt: 'desc' },
         skip: dto.skip,
@@ -278,7 +284,21 @@ export class StudentsService {
       this.prisma.studentProfile.count({ where }),
     ]);
 
-    return paginate(profiles.map((p) => this.toCandidateCard(p)), total, dto.page, dto.limit);
+    return paginate(
+      profiles.map((p) => this.toCandidateCard(p, p.progress)),
+      total,
+      dto.page,
+      dto.limit,
+    );
+  }
+
+  /** Загружает прогресс для набора студентов (для метрик вовлечённости). */
+  private async loadProgressMap(studentIds: string[]) {
+    const rows = await this.prisma.studentProgress.findMany({
+      where: { studentId: { in: studentIds } },
+      select: { studentId: true, skillScore: true, league: true, currentStreak: true, consistency30: true },
+    });
+    return new Map(rows.map((r) => [r.studentId, r]));
   }
 
   // --- Мапперы ----------------------------------------------------------------
@@ -289,19 +309,27 @@ export class StudentsService {
     _count: { select: { applications: true } },
   } satisfies Prisma.VacancyInclude;
 
-  private toCandidateCard(student: {
-    id: string;
-    fullName: string;
-    avatarUrl: string | null;
-    headline: string | null;
-    city: string | null;
-    university: string | null;
-    level: string;
-    specialization: SkillCategory | null;
-    isPremium: boolean;
-    skills?: { progress: number; skill: { name: string } }[];
-    _count?: { projects?: number };
-  }) {
+  private toCandidateCard(
+    student: {
+      id: string;
+      fullName: string;
+      avatarUrl: string | null;
+      headline: string | null;
+      city: string | null;
+      university: string | null;
+      level: string;
+      specialization: SkillCategory | null;
+      isPremium: boolean;
+      skills?: { progress: number; skill: { name: string } }[];
+      _count?: { projects?: number };
+    },
+    progress?: {
+      skillScore: number;
+      league: string;
+      currentStreak: number;
+      consistency30: number;
+    } | null,
+  ) {
     return {
       id: student.id,
       fullName: student.fullName,
@@ -316,6 +344,15 @@ export class StudentsService {
         student.skills?.slice(0, 6).map((s) => ({ name: s.skill.name, progress: s.progress })) ??
         [],
       projectCount: student._count?.projects ?? 0,
+      // SkillProof: метрики вовлечённости для карточки кандидата
+      engagement: progress
+        ? {
+            skillScore: progress.skillScore,
+            league: progress.league,
+            currentStreak: progress.currentStreak,
+            consistency30: progress.consistency30,
+          }
+        : null,
     };
   }
 }

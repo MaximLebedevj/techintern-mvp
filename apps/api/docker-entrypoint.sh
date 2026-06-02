@@ -15,7 +15,7 @@ USER_COUNT=$(node -e "const{PrismaClient}=require('@prisma/client');const p=new 
 
 if [ "$USER_COUNT" = "0" ]; then
   echo "→ База пуста — наполняем демо-данными…"
-  npm run db:seed || echo "⚠ Сидирование пропущено"
+  node dist/seed.js || echo "⚠ Сидирование пропущено"
 else
   echo "→ В базе уже есть данные ($USER_COUNT польз.) — пропускаем сид."
 fi

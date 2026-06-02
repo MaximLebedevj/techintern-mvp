@@ -149,6 +149,16 @@ model StudentProfile {
   guideProgress GuideProgress[]
   conversations Conversation[]
 
+  // SkillProof: паспорт навыков, streaks, верификация, геймификация
+  progress       StudentProgress?
+  integrations   Integration[]
+  activityProofs ActivityProof[]
+  dailyActivity  DailyActivity[]
+  goals          Goal[]
+  habits         Habit[]
+  badges         StudentBadge[]
+  guildMembership GuildMembership?
+
   @@index([specialization])
   @@map("student_profiles")
 }
@@ -294,6 +304,8 @@ model Application {
   status      ApplicationStatus @default(PENDING)
   coverLetter String?           @db.Text
   matchScore  Int               @default(0) // снимок match-score на момент отклика (0–100)
+  // SkillProof: приложенный к отклику снимок Skill Proof Passport (если студент прикрепил)
+  passportSnapshot Json?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
@@ -397,4 +409,267 @@ model Message {
 
   @@index([conversationId])
   @@map("messages")
+}
+
+// ============================================================================
+// SkillProof — паспорт навыков, верификация, streaks и геймификация
+// ============================================================================
+
+enum IntegrationProvider {
+  GITHUB
+  CODEWARS
+  LEETCODE
+  STEPIK
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  SYNCING
+  ERROR
+}
+
+/// Источник доказательства активности.
+enum ProofSource {
+  GITHUB
+  CODEWARS
+  LEETCODE
+  CAREER_HUB
+  MANUAL
+}
+
+enum ProofType {
+  COMMIT
+  PULL_REQUEST
+  ISSUE
+  PROBLEM_SOLVED
+  COURSE_COMPLETED
+  GUIDE_COMPLETED
+  PROJECT
+}
+
+/// Лиги геймификации.
+enum League {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+  DIAMOND
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum HabitCadence {
+  DAILY
+  WEEKLY
+}
+
+enum ChallengeType {
+  DUEL
+  GUILD
+}
+
+enum ChallengeStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  DECLINED
+}
+
+/// Денормализованное состояние прогресса студента (для быстрых чтений паспорта/лидерборда).
+model StudentProgress {
+  id             String         @id @default(cuid())
+  studentId      String         @unique
+  student        StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  skillScore     Int            @default(0) // 0–1000
+  league         League         @default(BRONZE)
+  currentStreak  Int            @default(0)
+  longestStreak  Int            @default(0)
+  lastActiveDate DateTime?
+  streakFreezes  Int            @default(2)
+  consistency30  Float          @default(0) // активных дней / 30
+  totalProofs    Int            @default(0)
+  scoreBreakdown Json? // { streak, volume, social }
+  updatedAt      DateTime       @updatedAt
+
+  @@index([league])
+  @@map("student_progress")
+}
+
+/// Подключённый внешний аккаунт с кэшем статистики.
+model Integration {
+  id           String              @id @default(cuid())
+  studentId    String
+  student      StudentProfile      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  provider     IntegrationProvider
+  username     String
+  status       IntegrationStatus   @default(CONNECTED)
+  stats        Json? // кэш сводной статистики (commits, prs, solved, stars …)
+  lastSyncedAt DateTime?
+  createdAt    DateTime            @default(now())
+
+  @@unique([studentId, provider])
+  @@map("integrations")
+}
+
+/// Верифицированное доказательство активности (питает Skill Tree и паспорт).
+model ActivityProof {
+  id         String         @id @default(cuid())
+  studentId  String
+  student    StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  source     ProofSource
+  type       ProofType
+  title      String
+  url        String?
+  occurredAt DateTime
+  weight     Float          @default(1)
+  skillSlugs String[]
+  createdAt  DateTime       @default(now())
+
+  @@index([studentId, occurredAt])
+  @@map("activity_proofs")
+}
+
+/// Активность по дням (для streak и heatmap-календаря).
+model DailyActivity {
+  id        String         @id @default(cuid())
+  studentId String
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date      DateTime       @db.Date
+  count     Int            @default(0)
+  sources   String[]
+
+  @@unique([studentId, date])
+  @@index([studentId])
+  @@map("daily_activity")
+}
+
+/// SMART-цель студента.
+model Goal {
+  id            String     @id @default(cuid())
+  studentId     String
+  student       StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  title         String
+  specific      String? // конкретика
+  measurable    String? // как измеряем
+  metricTarget  Int? // целевое значение
+  metricCurrent Int        @default(0)
+  unit          String? // «задач», «коммитов», «дней»
+  skillSlug     String?
+  dueDate       DateTime?
+  status        GoalStatus @default(ACTIVE)
+  createdAt     DateTime   @default(now())
+  completedAt   DateTime?
+
+  @@index([studentId])
+  @@map("goals")
+}
+
+/// Привычка с отметками выполнения.
+model Habit {
+  id              String         @id @default(cuid())
+  studentId       String
+  student         StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  title           String
+  cadence         HabitCadence   @default(DAILY)
+  targetPerPeriod Int            @default(1)
+  skillSlug       String?
+  color           String?
+  archived        Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+
+  checkins HabitCheckin[]
+
+  @@index([studentId])
+  @@map("habits")
+}
+
+model HabitCheckin {
+  id      String   @id @default(cuid())
+  habitId String
+  habit   Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  date    DateTime @db.Date
+  count   Int      @default(1)
+
+  @@unique([habitId, date])
+  @@map("habit_checkins")
+}
+
+/// Каталог бейджей.
+model Badge {
+  id          String  @id @default(cuid())
+  key         String  @unique
+  title       String
+  description String
+  icon        String // имя lucide-иконки или эмодзи
+  category    String // DISCIPLINE | TECH | EMPLOYMENT | SOCIAL
+  tier        String? // bronze | silver | gold
+
+  students StudentBadge[]
+
+  @@map("badges")
+}
+
+model StudentBadge {
+  id        String         @id @default(cuid())
+  studentId String
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  badgeId   String
+  badge     Badge          @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  awardedAt DateTime       @default(now())
+
+  @@unique([studentId, badgeId])
+  @@index([studentId])
+  @@map("student_badges")
+}
+
+/// Гильдия (командные челленджи).
+model Guild {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  emblem      String?
+  createdAt   DateTime @default(now())
+
+  members GuildMembership[]
+
+  @@map("guilds")
+}
+
+model GuildMembership {
+  id        String         @id @default(cuid())
+  guildId   String
+  guild     Guild          @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  studentId String         @unique // один студент — одна гильдия
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  role      String         @default("MEMBER")
+  joinedAt  DateTime       @default(now())
+
+  @@unique([guildId, studentId])
+  @@map("guild_memberships")
+}
+
+/// Дуэль 1v1 или гильдейский челлендж.
+model Challenge {
+  id                 String          @id @default(cuid())
+  type               ChallengeType
+  title              String
+  metric             String // «commits» | «problems» | «active_days»
+  target             Int
+  challengerId       String // studentId инициатора
+  opponentId         String? // studentId соперника (для DUEL)
+  status             ChallengeStatus @default(PENDING)
+  startsAt           DateTime        @default(now())
+  endsAt             DateTime
+  challengerProgress Int             @default(0)
+  opponentProgress   Int             @default(0)
+  winnerId           String?
+  createdAt          DateTime        @default(now())
+
+  @@index([status])
+  @@map("challenges")
 }

@@ -2,7 +2,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, Github, GraduationCap, MapPin, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCandidate } from '@/hooks/use-students';
+import { usePublicPassport } from '@/hooks/use-skillproof';
 import { useStartConversation } from '@/hooks/use-conversations';
+import { PassportCard } from '@/components/skillproof/passport-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,6 +17,7 @@ import { initials } from '@/lib/utils';
 export function CandidateDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: candidate, isLoading } = useCandidate(id);
+  const { data: passport } = usePublicPassport(id);
   const startConversation = useStartConversation();
   const navigate = useNavigate();
 
@@ -94,6 +97,9 @@ export function CandidateDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Skill Proof Passport кандидата — верифицированная активность и дисциплина */}
+      {passport && <PassportCard passport={passport} />}
 
       <Card>
         <CardHeader>

@@ -51,8 +51,11 @@ export function useVacancy(id: string | undefined) {
 export function useApplyToVacancy() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { vacancyId: string; coverLetter?: string }) =>
-      (await api.post<Application>('/applications', payload)).data,
+    mutationFn: async (payload: {
+      vacancyId: string;
+      coverLetter?: string;
+      attachPassport?: boolean;
+    }) => (await api.post<Application>('/applications', payload)).data,
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ['vacancy', variables.vacancyId] });
       qc.invalidateQueries({ queryKey: ['applications'] });

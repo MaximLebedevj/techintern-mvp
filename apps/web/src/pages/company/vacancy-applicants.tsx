@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, GraduationCap, Inbox, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Flame, GraduationCap, IdCard, Inbox, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApplicants } from '@/hooks/use-companies';
 import { useUpdateApplicationStatus } from '@/hooks/use-applications';
@@ -12,6 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/common/empty-state';
 import { MatchRing } from '@/components/match/match-ring';
+import { LeagueBadge } from '@/components/skillproof/league-badge';
 import {
   Select,
   SelectContent,
@@ -115,16 +116,31 @@ function ApplicantCard({ application }: { application: Application }) {
           )}
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             {student.level && <Badge variant="secondary">{SENIORITY_LABELS[student.level]}</Badge>}
+            {student.progress && <LeagueBadge league={student.progress.league} />}
+            {student.progress && (
+              <span className="inline-flex items-center gap-1 font-medium text-foreground">
+                {student.progress.skillScore} SP
+              </span>
+            )}
+            {student.progress && (
+              <span className="inline-flex items-center gap-1 text-orange-500">
+                <Flame className="size-3.5" />
+                {student.progress.currentStreak} дн.
+              </span>
+            )}
             {student.university && (
               <span className="inline-flex items-center gap-1">
                 <GraduationCap className="size-3.5" />
                 {student.university}
               </span>
             )}
-            {typeof student._count?.projects === 'number' && (
-              <span>{student._count.projects} проектов</span>
-            )}
           </div>
+          {application.passportSnapshot && (
+            <p className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-success/10 px-2.5 py-1 text-xs font-medium text-success">
+              <IdCard className="size-3.5" />
+              Приложен Skill Proof Passport · топ-{application.passportSnapshot.topPercent ?? '—'}% · {application.passportSnapshot.activeDays90} активных дней
+            </p>
+          )}
           {application.coverLetter && (
             <p className="mt-2 line-clamp-2 rounded-lg bg-muted/50 p-2 text-sm text-muted-foreground">
               {application.coverLetter}

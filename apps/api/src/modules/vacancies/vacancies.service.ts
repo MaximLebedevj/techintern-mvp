@@ -196,6 +196,9 @@ export class VacanciesService {
             specialization: true,
             skills: { include: { skill: true }, orderBy: { progress: 'desc' }, take: 6 },
             _count: { select: { projects: true } },
+            progress: {
+              select: { skillScore: true, league: true, currentStreak: true, consistency30: true },
+            },
           },
         },
         events: { orderBy: { createdAt: 'asc' } },

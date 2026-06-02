@@ -25,6 +25,12 @@ const ApplicationsPage = lazy(() =>
 const StudentProfilePage = lazy(() =>
   import('@/pages/student/profile').then((m) => ({ default: m.StudentProfilePage })),
 );
+const PassportPage = lazy(() => import('@/pages/student/passport').then((m) => ({ default: m.PassportPage })));
+const ProgressPage = lazy(() => import('@/pages/student/progress').then((m) => ({ default: m.ProgressPage })));
+const GoalsHabitsPage = lazy(() =>
+  import('@/pages/student/goals-habits').then((m) => ({ default: m.GoalsHabitsPage })),
+);
+const ChallengesPage = lazy(() => import('@/pages/challenges').then((m) => ({ default: m.ChallengesPage })));
 const CareerHubPage = lazy(() =>
   import('@/pages/career/career-hub').then((m) => ({ default: m.CareerHubPage })),
 );
@@ -79,6 +85,10 @@ export const router = createBrowserRouter([
         children: [
           { path: 'applications', element: <ApplicationsPage /> },
           { path: 'profile', element: <StudentProfilePage /> },
+          { path: 'passport', element: <PassportPage /> },
+          { path: 'progress', element: <ProgressPage /> },
+          { path: 'goals', element: <GoalsHabitsPage /> },
+          { path: 'challenges', element: <ChallengesPage /> },
         ],
       },
 

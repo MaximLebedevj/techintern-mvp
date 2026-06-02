@@ -17,6 +17,11 @@ import { ApplicationsModule } from './modules/applications/applications.module';
 import { CareerHubModule } from './modules/career-hub/career-hub.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { MatchingModule } from './modules/matching/matching.module';
+import { GamificationModule } from './modules/gamification/gamification.module';
+import { VerificationModule } from './modules/verification/verification.module';
+import { PassportModule } from './modules/passport/passport.module';
+import { HabitsModule } from './modules/habits/habits.module';
+import { ChallengesModule } from './modules/challenges/challenges.module';
 
 /**
  * Корневой модуль. Конфигурация загружается под ключ `config`,
@@ -42,6 +47,12 @@ import { MatchingModule } from './modules/matching/matching.module';
     CareerHubModule,
     MessagesModule,
     MatchingModule,
+    // SkillProof
+    GamificationModule,
+    VerificationModule,
+    PassportModule,
+    HabitsModule,
+    ChallengesModule,
   ],
   controllers: [HealthController],
   providers: [
