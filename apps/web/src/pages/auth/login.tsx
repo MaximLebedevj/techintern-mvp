@@ -39,7 +39,7 @@ export function LoginPage() {
   };
 
   return (
-    <AuthShell title="Вход в TechIntern" subtitle="Рады видеть вас снова">
+    <AuthShell title="Вход в SkillProof" subtitle="Рады видеть вас снова">
       <OAuthButtons />
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -75,14 +75,14 @@ export function LoginPage() {
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => fillDemo('student@techintern.ru')}
+            onClick={() => fillDemo('student@skillproof.space')}
             className="rounded-md bg-card px-2 py-1 font-medium text-primary hover:underline"
           >
             Студент
           </button>
           <button
             type="button"
-            onClick={() => fillDemo('company@techintern.ru')}
+            onClick={() => fillDemo('company@skillproof.space')}
             className="rounded-md bg-card px-2 py-1 font-medium text-primary hover:underline"
           >
             Компания

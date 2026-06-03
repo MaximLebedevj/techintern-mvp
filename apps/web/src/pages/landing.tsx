@@ -19,7 +19,7 @@ const STATS = [
   { value: '120 000', label: 'студентов IT/Math ищут работу ежегодно' },
   { value: '80%', label: 'вакансий требуют 1–3 года опыта' },
   { value: '2–3%', label: 'конверсия откликов в офферы на рынке' },
-  { value: '×5', label: 'цель конверсии отклик → оффер в TechIntern' },
+  { value: '×5', label: 'цель конверсии отклик → оффер в SkillProof' },
 ];
 
 const FEATURES = [
@@ -88,7 +88,7 @@ export function LandingPage() {
               Первая работа в IT — <span className="text-gradient">без барьеров</span>
             </h1>
             <p className="mt-5 max-w-xl text-lg text-muted-foreground">
-              TechIntern — карьерный наставник для студентов IT. Глубокий поиск по технологиям,
+              SkillProof — карьерный наставник для студентов IT. Глубокий поиск по технологиям,
               подготовка к собеседованиям и AI-подбор вакансий в одном месте.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -103,7 +103,7 @@ export function LandingPage() {
               </Button>
             </div>
             <p className="mt-4 text-sm text-muted-foreground">
-              Бесплатно для студентов · Демо: student@techintern.ru / password123
+              Бесплатно для студентов · Демо: student@skillproof.space / password123
             </p>
           </motion.div>
 
@@ -193,7 +193,7 @@ export function LandingPage() {
               Готовы найти первую стажировку?
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-white/70">
-              Присоединяйтесь к TechIntern — и сократите путь к первой работе с 3 до 1,5 месяцев.
+              Присоединяйтесь к SkillProof — и сократите путь к первой работе с 3 до 1,5 месяцев.
             </p>
             <Button asChild size="lg" className="mt-8 bg-white text-[hsl(245_55%_18%)] hover:bg-white/90">
               <Link to="/register">
@@ -209,7 +209,7 @@ export function LandingPage() {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-8 sm:flex-row sm:px-6 lg:px-8">
           <Logo size="sm" />
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} TechIntern — стажировки для IT-студентов
+            © {new Date().getFullYear()} SkillProof — стажировки для IT-студентов
           </p>
         </div>
       </footer>

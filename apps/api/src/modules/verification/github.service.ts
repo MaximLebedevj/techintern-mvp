@@ -15,7 +15,7 @@ export class GithubService {
 
   private headers(): Record<string, string> {
     const headers: Record<string, string> = {
-      'User-Agent': 'TechIntern-SkillProof',
+      'User-Agent': 'SkillProof',
       Accept: 'application/vnd.github+json',
     };
     if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;

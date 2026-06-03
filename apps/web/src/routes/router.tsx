@@ -1,4 +1,4 @@
-import { lazy } from 'react';
+import { lazy, type ComponentType } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppShell } from '@/components/layout/app-shell';
 import { ProtectedRoute } from './protected-route';
@@ -11,50 +11,73 @@ import { RegisterPage } from '@/pages/auth/register';
 import { OAuthCallbackPage } from '@/pages/auth/oauth-callback';
 import { NotFoundPage } from '@/pages/not-found';
 
+/**
+ * Ленивая загрузка с авто-перезагрузкой при ошибке загрузки чанка.
+ * После редеплоя устаревший index.html ссылается на исчезнувшие чанки
+ * («Failed to fetch dynamically imported module») — один раз перезагружаем
+ * страницу, чтобы получить свежий index.html (флаг защищает от зацикливания).
+ */
+function lazyWithRetry<T extends ComponentType<unknown>>(factory: () => Promise<{ default: T }>) {
+  return lazy<T>(async () => {
+    try {
+      const mod = await factory();
+      sessionStorage.removeItem('ti-chunk-reloaded');
+      return mod;
+    } catch (err) {
+      if (!sessionStorage.getItem('ti-chunk-reloaded')) {
+        sessionStorage.setItem('ti-chunk-reloaded', '1');
+        window.location.reload();
+        return new Promise<never>(() => {}); // зависаем до перезагрузки страницы
+      }
+      throw err;
+    }
+  });
+}
+
 // Экраны приложения — lazy (code-split по маршрутам, см. CLAUDE.md §7).
-const DashboardPage = lazy(() => import('@/pages/dashboard').then((m) => ({ default: m.DashboardPage })));
-const VacanciesPage = lazy(() =>
+const DashboardPage = lazyWithRetry(() => import('@/pages/dashboard').then((m) => ({ default: m.DashboardPage })));
+const VacanciesPage = lazyWithRetry(() =>
   import('@/pages/vacancies/vacancies-list').then((m) => ({ default: m.VacanciesPage })),
 );
-const VacancyDetailPage = lazy(() =>
+const VacancyDetailPage = lazyWithRetry(() =>
   import('@/pages/vacancies/vacancy-detail').then((m) => ({ default: m.VacancyDetailPage })),
 );
-const ApplicationsPage = lazy(() =>
+const ApplicationsPage = lazyWithRetry(() =>
   import('@/pages/student/applications').then((m) => ({ default: m.ApplicationsPage })),
 );
-const StudentProfilePage = lazy(() =>
+const StudentProfilePage = lazyWithRetry(() =>
   import('@/pages/student/profile').then((m) => ({ default: m.StudentProfilePage })),
 );
-const PassportPage = lazy(() => import('@/pages/student/passport').then((m) => ({ default: m.PassportPage })));
-const ProgressPage = lazy(() => import('@/pages/student/progress').then((m) => ({ default: m.ProgressPage })));
-const GoalsHabitsPage = lazy(() =>
+const PassportPage = lazyWithRetry(() => import('@/pages/student/passport').then((m) => ({ default: m.PassportPage })));
+const ProgressPage = lazyWithRetry(() => import('@/pages/student/progress').then((m) => ({ default: m.ProgressPage })));
+const GoalsHabitsPage = lazyWithRetry(() =>
   import('@/pages/student/goals-habits').then((m) => ({ default: m.GoalsHabitsPage })),
 );
-const ChallengesPage = lazy(() => import('@/pages/challenges').then((m) => ({ default: m.ChallengesPage })));
-const CareerHubPage = lazy(() =>
+const ChallengesPage = lazyWithRetry(() => import('@/pages/challenges').then((m) => ({ default: m.ChallengesPage })));
+const CareerHubPage = lazyWithRetry(() =>
   import('@/pages/career/career-hub').then((m) => ({ default: m.CareerHubPage })),
 );
-const CareerResourcePage = lazy(() =>
+const CareerResourcePage = lazyWithRetry(() =>
   import('@/pages/career/career-resource').then((m) => ({ default: m.CareerResourcePage })),
 );
-const MessagesPage = lazy(() => import('@/pages/messages').then((m) => ({ default: m.MessagesPage })));
-const SettingsPage = lazy(() => import('@/pages/settings').then((m) => ({ default: m.SettingsPage })));
-const CompanyProfilePage = lazy(() =>
+const MessagesPage = lazyWithRetry(() => import('@/pages/messages').then((m) => ({ default: m.MessagesPage })));
+const SettingsPage = lazyWithRetry(() => import('@/pages/settings').then((m) => ({ default: m.SettingsPage })));
+const CompanyProfilePage = lazyWithRetry(() =>
   import('@/pages/company/company-profile').then((m) => ({ default: m.CompanyProfilePage })),
 );
-const CompanyVacanciesPage = lazy(() =>
+const CompanyVacanciesPage = lazyWithRetry(() =>
   import('@/pages/company/company-vacancies').then((m) => ({ default: m.CompanyVacanciesPage })),
 );
-const PostVacancyPage = lazy(() =>
+const PostVacancyPage = lazyWithRetry(() =>
   import('@/pages/company/post-vacancy').then((m) => ({ default: m.PostVacancyPage })),
 );
-const VacancyApplicantsPage = lazy(() =>
+const VacancyApplicantsPage = lazyWithRetry(() =>
   import('@/pages/company/vacancy-applicants').then((m) => ({ default: m.VacancyApplicantsPage })),
 );
-const CandidatesPage = lazy(() =>
+const CandidatesPage = lazyWithRetry(() =>
   import('@/pages/company/candidates-list').then((m) => ({ default: m.CandidatesPage })),
 );
-const CandidateDetailPage = lazy(() =>
+const CandidateDetailPage = lazyWithRetry(() =>
   import('@/pages/company/candidate-detail').then((m) => ({ default: m.CandidateDetailPage })),
 );
 

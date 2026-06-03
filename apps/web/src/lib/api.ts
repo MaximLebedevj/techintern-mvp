@@ -5,7 +5,7 @@ import axios, {
 } from 'axios';
 
 /**
- * HTTP-клиент TechIntern.
+ * HTTP-клиент SkillProof.
  * Access-токен хранится в памяти (не в localStorage — безопаснее), refresh — в httpOnly-cookie.
  * При 401 один раз пытаемся обновить токен и повторить запрос (см. CLAUDE.md §5/§7).
  */

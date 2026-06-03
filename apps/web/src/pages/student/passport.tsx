@@ -20,7 +20,7 @@ export function PassportPage() {
       ? CATEGORY_LABELS[passport.market.specialization]
       : 'IT';
     const summary = [
-      `${passport.student.fullName} — Skill Proof Passport (TechIntern)`,
+      `${passport.student.fullName} — Skill Proof Passport (SkillProof)`,
       `Skill Score: ${passport.skillScore} · Лига: ${passport.leagueLabel}`,
       `Серия: ${passport.streak.current} дн. · Регулярность: ${Math.round(passport.streak.consistency30 * 100)}%`,
       passport.market ? `Рынок: топ-${passport.market.topPercent}% в направлении ${spec}` : '',

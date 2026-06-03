@@ -44,7 +44,7 @@ async function bootstrap(): Promise<void> {
 
   // Swagger — интерактивная документация API.
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('TechIntern API')
+    .setTitle('SkillProof API')
     .setDescription('API платформы поиска стажировок для IT-студентов')
     .setVersion('1.0')
     .addBearerAuth()
@@ -56,7 +56,7 @@ async function bootstrap(): Promise<void> {
 
   await app.listen(appConfig.port, '0.0.0.0');
   new Logger('Bootstrap').log(
-    `TechIntern API запущен на ${appConfig.apiPublicUrl} (порт ${appConfig.port}). Документация: /docs`,
+    `SkillProof API запущен на ${appConfig.apiPublicUrl} (порт ${appConfig.port}). Документация: /docs`,
   );
 }
 

@@ -27,7 +27,7 @@ export function RegisterPage() {
   const onSubmit = async (values: RegisterValues) => {
     try {
       await registerUser(values);
-      toast.success('Аккаунт создан! Добро пожаловать в TechIntern');
+      toast.success('Аккаунт создан! Добро пожаловать в SkillProof');
       navigate('/app', { replace: true });
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Не удалось зарегистрироваться'));

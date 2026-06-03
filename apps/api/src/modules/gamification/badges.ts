@@ -20,7 +20,7 @@ export const BADGE_CATALOG: BadgeDef[] = [
   { key: 'codewars-50', title: 'Решатель задач', description: '50+ задач на Codewars', icon: 'Swords', category: 'TECH', tier: 'bronze' },
   { key: 'careerhub-grad', title: 'Выпускник Career Hub', description: '5+ пройденных материалов', icon: 'GraduationCap', category: 'DISCIPLINE', tier: 'silver' },
   { key: 'diamond-league', title: 'Алмазная лига', description: 'Достигнут Diamond', icon: 'Gem', category: 'SOCIAL', tier: 'gold' },
-  { key: 'hired', title: 'Трудоустроен', description: 'Получен оффер через TechIntern', icon: 'BriefcaseBusiness', category: 'EMPLOYMENT', tier: 'gold' },
+  { key: 'hired', title: 'Трудоустроен', description: 'Получен оффер через SkillProof', icon: 'BriefcaseBusiness', category: 'EMPLOYMENT', tier: 'gold' },
 ];
 
 export interface BadgeContext {

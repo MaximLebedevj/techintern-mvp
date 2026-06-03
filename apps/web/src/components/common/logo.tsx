@@ -35,7 +35,7 @@ export function Logo({ className, withText = true, size = 'md' }: LogoProps) {
       </span>
       {withText && (
         <span className={cn('font-display font-extrabold tracking-tight', s.text)}>
-          Tech<span className="text-gradient">Intern</span>
+          Skill<span className="text-gradient">Proof</span>
         </span>
       )}
     </span>

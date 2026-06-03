@@ -1,12 +1,12 @@
 /* eslint-disable no-console */
 /**
- * Сид демо-данных TechIntern.
+ * Сид демо-данных SkillProof.
  * Наполняет Skill Tree, Career Hub (включая разборы кода из доклада),
  * демо-компании, студентов, вакансии и отклики со статус-трекером.
  *
  * Демо-входы (пароль у всех): password123
- *   • Студент:  student@techintern.ru
- *   • Компания: company@techintern.ru
+ *   • Студент:  student@skillproof.space
+ *   • Компания: company@skillproof.space
  */
 import {
   ApplicationStatus,
@@ -478,7 +478,7 @@ interface CompanySeed {
 
 const COMPANIES: CompanySeed[] = [
   {
-    email: 'company@techintern.ru',
+    email: 'company@skillproof.space',
     name: 'DevHorizon',
     description:
       'Продуктовая IT-компания: строим B2B-платформы аналитики. Любим стажёров и растим их до middle.',
@@ -553,7 +553,7 @@ const COMPANIES: CompanySeed[] = [
     ],
   },
   {
-    email: 'data@techintern.ru',
+    email: 'data@skillproof.space',
     name: 'Нейрон Лаб',
     description: 'R&D-лаборатория в области ML и анализа данных. Работаем с реальными датасетами.',
     city: 'Санкт-Петербург',
@@ -613,7 +613,7 @@ const COMPANIES: CompanySeed[] = [
     ],
   },
   {
-    email: 'studio@techintern.ru',
+    email: 'studio@skillproof.space',
     name: 'Пиксель Студио',
     description: 'Веб-студия полного цикла. Делаем сайты и мобильные приложения для брендов.',
     city: 'Удалённо',
@@ -761,7 +761,7 @@ interface StudentSeed {
 
 const STUDENTS: StudentSeed[] = [
   {
-    email: 'student@techintern.ru',
+    email: 'student@skillproof.space',
     fullName: 'Алексей Смирнов',
     headline: 'Frontend-разработчик · React + TypeScript · ищу первую стажировку',
     bio: 'Студент 3 курса, увлечён фронтендом. Сделал несколько проектов на React и TypeScript, разбираюсь в хуках и управлении состоянием.',
@@ -805,7 +805,7 @@ const STUDENTS: StudentSeed[] = [
     ],
   },
   {
-    email: 'maria@techintern.ru',
+    email: 'maria@skillproof.space',
     fullName: 'Мария Иванова',
     headline: 'Data Science · Python · Pandas · ML-энтузиаст',
     bio: 'Изучаю анализ данных и ML, прохожу соревнования на Kaggle. Уверенно работаю с Pandas и SQL.',
@@ -830,7 +830,7 @@ const STUDENTS: StudentSeed[] = [
     ],
   },
   {
-    email: 'dmitry@techintern.ru',
+    email: 'dmitry@skillproof.space',
     fullName: 'Дмитрий Кузнецов',
     headline: 'Backend · Node.js + NestJS · PostgreSQL',
     bio: 'Люблю проектировать API и работать с базами данных. Делал backend для нескольких pet-проектов.',
@@ -856,7 +856,7 @@ const STUDENTS: StudentSeed[] = [
     ],
   },
   {
-    email: 'sofia@techintern.ru',
+    email: 'sofia@skillproof.space',
     fullName: 'София Петрова',
     headline: 'Frontend-стажёр · Vue.js · вёрстка',
     bio: 'Начинаю путь во фронтенде, делаю учебные проекты на Vue. Внимательна к деталям вёрстки.',
@@ -913,7 +913,7 @@ async function seedStudents(passwordHash: string): Promise<string> {
       include: { studentProfile: true },
     });
 
-    if (s.email === 'student@techintern.ru') {
+    if (s.email === 'student@skillproof.space') {
       primaryStudentId = user.studentProfile!.id;
     }
   }
@@ -972,7 +972,7 @@ const BADGE_SEED: Prisma.BadgeCreateManyInput[] = [
   { key: 'codewars-50', title: 'Решатель задач', description: '50+ задач на Codewars', icon: 'Swords', category: 'TECH', tier: 'bronze' },
   { key: 'careerhub-grad', title: 'Выпускник Career Hub', description: '5+ пройденных материалов', icon: 'GraduationCap', category: 'DISCIPLINE', tier: 'silver' },
   { key: 'diamond-league', title: 'Алмазная лига', description: 'Достигнут Diamond', icon: 'Gem', category: 'SOCIAL', tier: 'gold' },
-  { key: 'hired', title: 'Трудоустроен', description: 'Получен оффер через TechIntern', icon: 'BriefcaseBusiness', category: 'EMPLOYMENT', tier: 'gold' },
+  { key: 'hired', title: 'Трудоустроен', description: 'Получен оффер через SkillProof', icon: 'BriefcaseBusiness', category: 'EMPLOYMENT', tier: 'gold' },
 ];
 
 /** Дата начала дня N дней назад (отрицательное N — в будущем). */
@@ -995,7 +995,7 @@ async function seedSkillProof(): Promise<void> {
     include: { user: { select: { email: true } } },
   });
   const byEmail = new Map(students.map((s) => [s.user.email, s.id]));
-  const alexey = byEmail.get('student@techintern.ru');
+  const alexey = byEmail.get('student@skillproof.space');
   if (!alexey) return;
 
   // --- Интеграции (верифицированные аккаунты) ---
@@ -1111,9 +1111,9 @@ async function seedSkillProof(): Promise<void> {
 
   // --- Прогресс прочих студентов (для лидерборда и сравнения с рынком) ---
   const others: { email: string; score: number; league: Prisma.StudentProgressCreateManyInput['league']; streak: number; consistency: number }[] = [
-    { email: 'dmitry@techintern.ru', score: 610, league: 'PLATINUM', streak: 21, consistency: 0.7 },
-    { email: 'maria@techintern.ru', score: 540, league: 'GOLD', streak: 12, consistency: 0.6 },
-    { email: 'sofia@techintern.ru', score: 280, league: 'SILVER', streak: 5, consistency: 0.4 },
+    { email: 'dmitry@skillproof.space', score: 610, league: 'PLATINUM', streak: 21, consistency: 0.7 },
+    { email: 'maria@skillproof.space', score: 540, league: 'GOLD', streak: 12, consistency: 0.6 },
+    { email: 'sofia@skillproof.space', score: 280, league: 'SILVER', streak: 5, consistency: 0.4 },
   ];
   for (const o of others) {
     const id = byEmail.get(o.email);
@@ -1132,13 +1132,13 @@ async function seedSkillProof(): Promise<void> {
       },
     });
   }
-  const dmitryId = byEmail.get('dmitry@techintern.ru');
+  const dmitryId = byEmail.get('dmitry@skillproof.space');
   if (dmitryId) {
     await prisma.integration.create({
       data: { studentId: dmitryId, provider: 'GITHUB', username: 'example-dmitry', status: 'CONNECTED', lastSyncedAt: new Date(), stats: { repos: 9, followers: 11, stars: 17, commits: 256, languages: ['nodejs', 'typescript', 'sql'] } },
     });
   }
-  const mariaId = byEmail.get('maria@techintern.ru');
+  const mariaId = byEmail.get('maria@skillproof.space');
   if (mariaId) {
     await prisma.integration.create({
       data: { studentId: mariaId, provider: 'CODEWARS', username: 'example-maria', status: 'CONNECTED', lastSyncedAt: new Date(), stats: { honor: 380, solved: 51, rank: '6 kyu', languages: ['python'] } },
@@ -1150,7 +1150,7 @@ async function seedSkillProof(): Promise<void> {
   const backendGuild = await prisma.guild.create({ data: { name: 'Backend Builders', slug: 'backend-builders', emblem: '🛠️', description: 'Серверная инженерия' } });
   const dataGuild = await prisma.guild.create({ data: { name: 'Data Wizards', slug: 'data-wizards', emblem: '📊', description: 'Data Science и ML' } });
 
-  const sofiaId = byEmail.get('sofia@techintern.ru');
+  const sofiaId = byEmail.get('sofia@skillproof.space');
   const memberships: Prisma.GuildMembershipCreateManyInput[] = [
     { guildId: frontendGuild.id, studentId: alexey, role: 'LEADER' },
   ];
@@ -1232,8 +1232,8 @@ async function main(): Promise<void> {
   await seedSkillProof();
 
   console.log('✅ Сид завершён.');
-  console.log('   Студент:  student@techintern.ru / password123');
-  console.log('   Компания: company@techintern.ru / password123');
+  console.log('   Студент:  student@skillproof.space / password123');
+  console.log('   Компания: company@skillproof.space / password123');
 }
 
 main()

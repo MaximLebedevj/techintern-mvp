@@ -37,7 +37,7 @@ export function AuthShell({
             начинается здесь
           </h2>
           <p className="mt-3 max-w-md text-white/70">
-            TechIntern — это не просто job-board, а карьерный наставник для студентов IT.
+            SkillProof — это не просто job-board, а карьерный наставник для студентов IT.
           </p>
           <ul className="mt-8 space-y-3">
             {HIGHLIGHTS.map((item) => (
